@@ -38,7 +38,7 @@ Local, private, multi-model AI chat engine with brutal honesty and real safety f
 
 Create a new folder called "multi-llm"
 
-Download all files in https://github.com/RSI69/brain to your new folder, "multi-llm"
+Download all files in https://github.com/TheGoodTheBadandTheAlec/multi-llm to your new folder, "multi-llm"
 
 ---
 
