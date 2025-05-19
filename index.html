@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>multi-llm chat</title>
+  <style>
+    body {
+      background: #0a0a0a;
+      color: white;
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      margin: 0;
+    }
+
+    h1 {
+      color: #00ccff;
+      text-shadow: 0 0 10px #00ccff;
+      margin-bottom: 20px;
+    }
+
+    #chat {
+      width: 600px;
+      max-width: 90%;
+      background: #111;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(0,255,255,0.3);
+      overflow-y: auto;
+      max-height: 70vh;
+    }
+
+    .bubble {
+      margin: 10px 0;
+      padding: 10px 14px;
+      border-radius: 8px;
+      white-space: pre-wrap;
+    }
+
+    .user {
+      background: #222;
+      color: #00ccff;
+      align-self: flex-end;
+    }
+
+    .bot {
+      background: #333;
+      color: white;
+    }
+
+    #prompt {
+      width: 100%;
+      margin-top: 20px;
+      padding: 10px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      background: #111;
+      color: white;
+      box-shadow: 0 0 10px rgba(0,255,255,0.4);
+      resize: none;
+      height: 100px;
+    }
+
+    #sendBtn {
+      margin-top: 10px;
+      background: #00ccff;
+      color: black;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      cursor: pointer;
+      box-shadow: 0 0 15px #00ccff;
+    }
+  </style>
+</head>
+<body>
+  <h1>multi-llm chat</h1>
+
+  <div id="chat"></div>
+
+  <textarea id="prompt" placeholder="Ask something..."></textarea>
+  <button id="sendBtn" onclick="ask()">Send</button>
+
+  <script>
+    const chatBox = document.getElementById("chat");
+    const session_id = "local-user";  // could randomize this later
+
+    async function ask() {
+    const prompt = document.getElementById("prompt").value;
+    if (!prompt.trim()) return;
+
+    const userBubble = document.createElement("div");
+    userBubble.className = "bubble user";
+    userBubble.textContent = prompt;
+    chatBox.appendChild(userBubble);
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    document.getElementById("prompt").value = "";
+
+    const botBubble = document.createElement("div");
+    botBubble.className = "bubble bot";
+    chatBox.appendChild(botBubble);
+
+    const loader = document.getElementById("loader");
+    loader.style.display = "block";
+    loader.textContent = "processing";
+
+    const res = await fetch("/stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt, session_id })
+    });
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        const events = buffer.split("\n\n");
+        buffer = events.pop(); // incomplete part
+
+        for (const event of events) {
+        if (event.startsWith("event: chunk")) {
+            const text = event.split("data: ")[1];
+            botBubble.textContent += text;
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        if (event.startsWith("event: done")) {
+            loader.style.display = "none";
+        }
+        }
+    }
+    }
+
+  </script>
+
+<div id="loader"
+     style="display:none; margin: 10px; font-weight: bold; color: #00ccff; text-shadow: 0 0 5px #00ccff;">
+</div>
+
+
+</body>
+</html>

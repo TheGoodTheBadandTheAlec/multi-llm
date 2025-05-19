@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+slowapi
+pydantic==1.*
+transformers==4.40.0
+torch --extra-index-url https://download.pytorch.org/whl/cu121
+sentencepiece
+llama-cpp-python==0.2.69
+faiss-cpu ; platform_system!="Windows"      # faiss omitted automatically on Win
